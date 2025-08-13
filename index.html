@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quarter Midget Gear Ratio Calculator</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 600px; margin: auto; }
+        label { display: block; margin: 10px 0 5px; }
+        input, select, button { padding: 5px; margin-bottom: 10px; width: 100%; }
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: center; }
+        th { background-color: #f2f2f2; }
+        .closest { background-color: #d4edda; } /* Green for closest */
+        .above, .below { background-color: #fff3cd; } /* Yellow for above/below */
+        #output { margin-top: 20px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Quarter Midget Gear Ratio Calculator</h2>
+        <label for="gearbox">Select Gearbox:</label>
+        <select id="gearbox">
+            <option value="6.14">HONDA (6.14)</option>
+            <option value="6.07">BRIGGS (6.07)</option>
+            <option value="5.73">DECO (5.73)</option>
+        </select>
+
+        <label for="desiredRPM">Desired RPM:</label>
+        <input type="number" id="desiredRPM" required>
+
+        <label for="currentRPM">Current RPM:</label>
+        <input type="number" id="currentRPM" required>
+
+        <label for="currentEngine">Current Engine Gear Teeth:</label>
+        <input type="number" id="currentEngine" required>
+
+        <label for="currentAxle">Current Axle Gear Teeth:</label>
+        <input type="number" id="currentAxle" required>
+
+        <button onclick="calculate()">Calculate</button>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        function calculate() {
+            // Get inputs
+            const multiplier = parseFloat(document.getElementById("gearbox").value);
+            const desiredRPM = parseFloat(document.getElementById("desiredRPM").value);
+            const currentRPM = parseFloat(document.getElementById("currentRPM").value);
+            const currentEngine = parseInt(document.getElementById("currentEngine").value);
+            const currentAxle = parseInt(document.getElementById("currentAxle").value);
+
+            // Validate inputs
+            if (isNaN(desiredRPM) || isNaN(currentRPM) || isNaN(currentEngine) || isNaN(currentAxle)) {
+                document.getElementById("output").innerHTML = "Please fill in all fields with valid numbers.";
+                return;
+            }
+
+            // Calculate current and target ratios
+            const currentRawRatio = (currentAxle / currentEngine) * multiplier;
+            const currentRatio = (Math.round((currentRawRatio + Number.EPSILON) * 1000000) / 1000000).toFixed(2);
+            const targetRawRatio = currentRawRatio * (desiredRPM / currentRPM);
+            const targetRatio = (Math.round((targetRawRatio + Number.EPSILON) * 1000000) / 1000000).toFixed(2);
+
+            // Define gear ranges
+            const engineRange = Array.from({length: 42-17+1}, (_, i) => i + 17); // 17 to 42
+            const axleRange = Array.from({length: 36-22+1}, (_, i) => i + 22);   // 22 to 36
+
+            // Calculate all possible combinations
+            let combinations = [];
+            for (let engine of engineRange) {
+                for (let axle of axleRange) {
+                    const rawRatio = (axle / engine) * multiplier;
+                    const diff = Math.abs(rawRatio - targetRawRatio);
+                    const displayedRatio = (Math.round((rawRatio + Number.EPSILON) * 1000000) / 1000000).toFixed(2);
+                    const gearDiff = Math.abs(engine - axle);
+                    combinations.push({engine, axle, ratio: displayedRatio, diff, rawRatio, gearDiff});
+                }
+            }
+
+            // Sort by difference
+            combinations.sort((a, b) => a.diff - b.diff);
+
+            // Find closest
+            const closest = combinations[0];
+
+            // Find 5 above and 5 below, excluding the closest combination
+            let above = combinations
+                .filter(c => c.rawRatio > targetRawRatio && (c.engine !== closest.engine || c.axle !== closest.axle))
+                .slice(0, 5);
+            let below = combinations
+                .filter(c => c.rawRatio < targetRawRatio && (c.engine !== closest.engine || c.axle !== closest.axle))
+                .slice(0, 5);
+
+            // Sort above: descending rawRatio, then ascending gearDiff (larger gearDiff further from closest)
+            above.sort((a, b) => b.rawRatio - a.rawRatio || b.gearDiff - a.gearDiff);
+
+            // Sort below: ascending rawRatio, then ascending gearDiff (larger gearDiff further from closest)
+            below.sort((a, b) => a.rawRatio - b.rawRatio || b.gearDiff - a.gearDiff);
+
+            // Prepare table
+            let output = `<p>Current Ratio: ${currentRatio}</p>`;
+            output += `<p>Target Ratio: ${targetRatio}</p>`;
+            output += `<table><tr><th>Engine</th><th>Axle</th><th>Ratio</th></tr>`;
+
+            // Above combinations (up to 5)
+            for (let combo of above) {
+                output += `<tr class="above"><td>${combo.engine}</td><td>${combo.axle}</td><td>${combo.ratio}</td></tr>`;
+            }
+
+            // Closest combination
+            output += `<tr class="closest"><td>${closest.engine}</td><td>${closest.axle}</td><td>${closest.ratio}</td></tr>`;
+
+            // Below combinations (up to 5)
+            for (let combo of below) {
+                output += `<tr class="below"><td>${combo.engine}</td><td>${combo.axle}</td><td>${combo.ratio}</td></tr>`;
+            }
+
+            output += `</table>`;
+            document.getElementById("output").innerHTML = output;
+        }
+    </script>
+</body>
+</html>
