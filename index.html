@@ -28,8 +28,10 @@
             font-size: 1.1rem; /* ~18px */
         }
         input, select {
-            width: 100%;
-            padding: 0.8rem;
+            display: inline-block;
+            width: auto;
+            max-width: 200px;
+            padding: 0.6rem;
             margin-bottom: 1.2rem;
             font-size: 1.1rem; /* ~18px */
             border: 1px solid #ccc;
@@ -48,9 +50,9 @@
         button {
             display: inline-block;
             width: auto;
-            max-width: 150px; /* Smaller width */
-            padding: 0.6rem 1rem; /* Reduced padding */
-            font-size: 1rem; /* ~16px, smaller */
+            max-width: 150px;
+            padding: 0.6rem 1rem;
+            font-size: 1rem; /* ~16px */
             background-color: #007aff;
             color: white;
             border: none;
@@ -60,7 +62,7 @@
             text-align: center;
         }
         .button-container {
-            text-align: left; /* Align button to left */
+            text-align: left;
             margin-bottom: 1.2rem;
         }
         button:hover {
@@ -74,7 +76,7 @@
             margin: 0.5rem 0;
         }
         table {
-            width: 100%;
+            width: auto;
             border-collapse: collapse;
             font-size: 1rem; /* ~16px */
             background-color: white;
@@ -82,7 +84,7 @@
         }
         th, td {
             border: 1px solid #ddd;
-            padding: 0.4rem 0.6rem;
+            padding: 0.3rem 0.5rem;
             text-align: center;
             white-space: nowrap;
         }
@@ -91,10 +93,9 @@
             position: sticky;
             top: 0;
             z-index: 1;
-            width: 33.33%;
         }
         td {
-            min-width: 50px;
+            min-width: 40px;
         }
         .closest {
             background-color: #d4edda;
@@ -103,14 +104,14 @@
             background-color: #fff3cd;
         }
         @media (max-width: 428px) {
-            body { font-size: 1rem; } /* ~16px */
-            h2 { font-size: 1.5rem; } /* ~24px */
-            label { font-size: 0.95rem; } /* ~15px */
-            input, select { font-size: 0.95rem; padding: 0.7rem; } /* ~15px */
-            button { font-size: 0.9rem; padding: 0.5rem 0.8rem; } /* ~14px */
-            table { font-size: 0.9rem; } /* ~14px */
-            th, td { padding: 0.3rem 0.5rem; }
-            td { min-width: 45px; }
+            body { font-size: 1rem; }
+            h2 { font-size: 1.5rem; }
+            label { font-size: 0.95rem; }
+            input, select { font-size: 0.95rem; padding: 0.5rem; max-width: 180px; }
+            button { font-size: 0.9rem; padding: 0.5rem 0.8rem; max-width: 130px; }
+            table { font-size: 0.9rem; }
+            th, td { padding: 0.2rem 0.4rem; }
+            td { min-width: 35px; }
         }
     </style>
 </head>
@@ -187,36 +188,38 @@
             // Find closest
             const closest = combinations[0];
 
-            // Find 5 above and 5 below, excluding the closest combination
+            // Filter above and below, excluding the closest
             let above = combinations
                 .filter(c => c.rawRatio > targetRawRatio && (c.engine !== closest.engine || c.axle !== closest.axle))
+                .sort((a, b) => a.rawRatio - b.rawRatio) // Increasing ratios
                 .slice(0, 5);
+
             let below = combinations
                 .filter(c => c.rawRatio < targetRawRatio && (c.engine !== closest.engine || c.axle !== closest.axle))
+                .sort((a, b) => b.rawRatio - a.rawRatio) // Decreasing ratios
                 .slice(0, 5);
-
-            // Sort above: descending rawRatio, then ascending gearDiff (smaller gearDiff closer to closest)
-            above.sort((a, b) => b.rawRatio - a.rawRatio || a.gearDiff - b.gearDiff);
-
-            // Sort below: ascending rawRatio, then ascending gearDiff (smaller gearDiff closer to closest)
-            below.sort((a, b) => a.rawRatio - b.rawRatio || a.gearDiff - b.gearDiff);
 
             // Prepare table
             let output = `<p>Current Ratio: ${currentRatio}</p>`;
             output += `<p>Target Ratio: ${targetRatio}</p>`;
-            output += `<table><tr><th>Engine</th><th>Axle</th><th>Ratio</th></tr>`;
+            output += `<table><tr><th>Engine</th><th>Axle</th><th>Delta</th><th>Ratio</th><th>RPM</th></tr>`;
 
-            // Above combinations (up to 5)
+            // Above combinations (increasing ratios)
             for (let combo of above) {
-                output += `<tr class="above"><td>${combo.engine}</td><td>${combo.axle}</td><td>${combo.ratio}</td></tr>`;
+                const className = (combo.ratio === closest.ratio) ? "closest" : "above";
+                const rpm = Math.round(currentRPM * (combo.rawRatio / currentRawRatio));
+                output += `<tr class="${className}"><td>${combo.engine}</td><td>${combo.axle}</td><td>${combo.gearDiff}</td><td>${combo.ratio}</td><td>${rpm}</td></tr>`;
             }
 
             // Closest combination
-            output += `<tr class="closest"><td>${closest.engine}</td><td>${closest.axle}</td><td>${closest.ratio}</td></tr>`;
+            const closestRpm = Math.round(currentRPM * (closest.rawRatio / currentRawRatio));
+            output += `<tr class="closest"><td>${closest.engine}</td><td>${closest.axle}</td><td>${closest.gearDiff}</td><td>${closest.ratio}</td><td>${closestRpm}</td></tr>`;
 
-            // Below combinations (up to 5)
+            // Below combinations (decreasing ratios)
             for (let combo of below) {
-                output += `<tr class="below"><td>${combo.engine}</td><td>${combo.axle}</td><td>${combo.ratio}</td></tr>`;
+                const className = (combo.ratio === closest.ratio) ? "closest" : "below";
+                const rpm = Math.round(currentRPM * (combo.rawRatio / currentRawRatio));
+                output += `<tr class="${className}"><td>${combo.engine}</td><td>${combo.axle}</td><td>${combo.gearDiff}</td><td>${combo.ratio}</td><td>${rpm}</td></tr>`;
             }
 
             output += `</table>`;
