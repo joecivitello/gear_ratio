@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Quarter Midget Gear Ratio Calculator</title>
+    <title>Quarter Midget Gear Ratio Calculator V.18</title>
     <style>
         body {
             font-family: -apple-system, Arial, sans-serif;
@@ -191,20 +191,22 @@
             // Filter above and below, excluding the closest
             let above = combinations
                 .filter(c => c.rawRatio > targetRawRatio && (c.engine !== closest.engine || c.axle !== closest.axle))
-                .sort((a, b) => a.rawRatio - b.rawRatio) // Increasing ratios
-                .slice(0, 5);
+                .sort((a, b) => a.diff - b.diff) // Smallest diff first
+                .slice(0, 5)
+                .sort((a, b) => b.rawRatio - a.rawRatio); // Decreasing for display
 
             let below = combinations
                 .filter(c => c.rawRatio < targetRawRatio && (c.engine !== closest.engine || c.axle !== closest.axle))
-                .sort((a, b) => b.rawRatio - a.rawRatio) // Decreasing ratios
-                .slice(0, 5);
+                .sort((a, b) => a.diff - b.diff) // Smallest diff first
+                .slice(0, 5)
+                .sort((a, b) => b.rawRatio - a.rawRatio); // Decreasing for display
 
             // Prepare table
             let output = `<p>Current Ratio: ${currentRatio}</p>`;
             output += `<p>Target Ratio: ${targetRatio}</p>`;
             output += `<table><tr><th>Engine</th><th>Axle</th><th>Delta</th><th>Ratio</th><th>RPM</th></tr>`;
 
-            // Above combinations (increasing ratios)
+            // Above combinations (decreasing ratios)
             for (let combo of above) {
                 const className = (combo.ratio === closest.ratio) ? "closest" : "above";
                 const rpm = Math.round(currentRPM * (combo.rawRatio / currentRawRatio));
