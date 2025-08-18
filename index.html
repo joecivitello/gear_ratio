@@ -145,8 +145,9 @@
     <div class="container">
         <h2>Quarter Midget Gear Calculator</h2>
         <p class="instructions">Select your gear box and input your desired RPM, current RPM, engine, and axle gear. Press calculate, and your current / target ratios will be displayed along with a table of possible gear combinations for the desired RPM. The closest ratio(s) to the target will be highlighted green and alternate combinations above and below.</p>
-        <label for="gearbox">Select Gearbox:</label>
+        <label for="gearbox">Gearbox:</label>
         <select id="gearbox">
+            <option value="" selected>Select Gearbox</option>
             <option value="6.14">HONDA (6.14)</option>
             <option value="6.07">BRIGGS (6.07)</option>
             <option value="5.73">DECO (5.73)</option>
@@ -171,8 +172,7 @@
  
         <div id="output"></div>
     </div>
-<BR>
-    <BR>
+
     <p>Copyright 2025 - Civitello Racing</p>
  
     <script>
@@ -185,9 +185,9 @@
             const currentAxle = parseInt(document.getElementById("currentAxle").value);
  
             // Validate inputs
-            if (isNaN(desiredRPM) || isNaN(currentRPM) || isNaN(currentEngine) || isNaN(currentAxle) ||
+            if (isNaN(multiplier) || isNaN(desiredRPM) || isNaN(currentRPM) || isNaN(currentEngine) || isNaN(currentAxle) ||
                 desiredRPM <= 0 || currentRPM <= 0 || currentEngine < 17 || currentEngine > 42 || currentAxle < 22 || currentAxle > 36) {
-                document.getElementById("output").innerHTML = "Please enter valid numbers: RPMs must be positive, engine gears 17–42, axle gears 22–36.";
+                document.getElementById("output").innerHTML = "Please enter valid numbers: Select a gearbox, RPMs must be positive, engine gears 17–42, axle gears 22–36.";
                 return;
             }
  
@@ -259,7 +259,7 @@
         }
 
         function resetForm() {
-            document.getElementById("gearbox").value = "6.14"; // Reset to Honda (default)
+            document.getElementById("gearbox").value = ""; // Reset to blank option
             document.getElementById("desiredRPM").value = "";
             document.getElementById("currentRPM").value = "";
             document.getElementById("currentEngine").value = "";
